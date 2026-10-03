@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>8 ball</title>
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050505;
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 "Segoe UI", sans-serif;
+}
+.title {
+    position: fixed;
+    top: 24px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: #f5f5f5;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.4px;
+}
+.ball {
+    width: min(82vw, 82vh, 500px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(
+            circle at 34% 27%,
+            #353535 0%,
+            #151515 28%,
+            #070707 62%,
+            #000 100%
+        );
+    box-shadow:
+        inset -28px -35px 55px rgba(0,0,0,.95),
+        inset 14px 12px 30px rgba(255,255,255,.07),
+        0 25px 70px rgba(0,0,0,.65);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    transition: transform .12s ease;
+}
+.ball::after {
+    content: "";
+    position: absolute;
+    width: 43%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #f7f7f7;
+    box-shadow:
+        inset 0 3px 7px rgba(0,0,0,.18),
+        0 1px 8px rgba(0,0,0,.35);
+}
+.answer {
+    position: relative;
+    z-index: 2;
+    color: #050505;
+    font-size: clamp(22px, 6vw, 38px);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    transform: scale(.9);
+    transition: transform .18s cubic-bezier(.2,.8,.2,1);
+}
+.answer.pop {
+    transform: scale(1);
+}
+.ball.shake {
+    animation: shake .55s cubic-bezier(.36,.07,.19,.97);
+}
+@keyframes shake {
+    0% {
+        transform: rotate(0deg) translate(0, 0) scale(1);
+    }
+    10% {
+        transform: rotate(-7deg) translate(-14px, 5px) scale(1.025);
+    }
+    20% {
+        transform: rotate(8deg) translate(15px, -6px) scale(1.035);
+    }
+    30% {
+        transform: rotate(-7deg) translate(-14px, 5px) scale(1.02);
+    }
+    40% {
+        transform: rotate(6deg) translate(12px, -4px) scale(1.03);
+    }
+    50% {
+        transform: rotate(-5deg) translate(-9px, 3px) scale(1.015);
+    }
+    60% {
+        transform: rotate(4deg) translate(7px, -3px) scale(1.02);
+    }
+    70% {
+        transform: rotate(-3deg) translate(-5px, 2px) scale(1.01);
+    }
+    80% {
+        transform: rotate(2deg) translate(3px, -1px) scale(1.005);
+    }
+    100% {
+        transform: rotate(0deg) translate(0, 0) scale(1);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ball.shake {
+        animation: none;
+    }
+}
+</style>
+</head>
+<body>
+<div class="title">Sekond’s magic 8 ball</div>
+<div class="ball" id="ball">
+    <div class="answer pop" id="answer">8</div>
+</div>
+<script>
+const ball = document.getElementById("ball");
+const answer = document.getElementById("answer");
+let lastX = null;
+let lastY = null;
+let lastZ = null;
+let lastShake = 0;
+function shakeBall() {
+    const now = Date.now();
+    if (now - lastShake < 700) return;
+    lastShake = now;
+    ball.classList.remove("shake");
+    answer.classList.remove("pop");
+    void ball.offsetWidth;
+    ball.classList.add("shake");
+    setTimeout(() => {
+        answer.textContent = Math.random() < 0.5 ? "Yes" : "No";
+        answer.classList.add("pop");
+    }, 320);
+}
+function motion(event) {
+    const a = event.accelerationIncludingGravity;
+    if (!a) return;
+    if (lastX === null) {
+        lastX = a.x;
+        lastY = a.y;
+        lastZ = a.z;
+        return;
+    }
+    const movement =
+        Math.abs(a.x - lastX) +
+        Math.abs(a.y - lastY) +
+        Math.abs(a.z - lastZ);
+    lastX = a.x;
+    lastY = a.y;
+    lastZ = a.z;
+    if (movement > 24) {
+        shakeBall();
+    }
+}
+async function enableMotion() {
+    if (
+        typeof DeviceMotionEvent !== "undefined" &&
+        typeof DeviceMotionEvent.requestPermission === "function"
+    ) {
+        try {
+            const permission =
+                await DeviceMotionEvent.requestPermission();
+            if (permission === "granted") {
+                window.addEventListener("devicemotion", motion);
+            }
+        } catch {}
+    } else {
+        window.addEventListener("devicemotion", motion);
+    }
+}
+ball.addEventListener("click", async () => {
+    await enableMotion();
+    shakeBall();
+});
+if (
+    typeof DeviceMotionEvent !== "undefined" &&
+    typeof DeviceMotionEvent.requestPermission !== "function"
+) {
+    window.addEventListener("devicemotion", motion);
+}
+</script>
+</body>
+</html>
